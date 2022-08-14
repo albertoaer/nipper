@@ -76,9 +76,10 @@ func injectFunction(val reflect.Value) gin.HandlerFunc {
 		panic("Invalid output from endpoint handler")
 	}
 	useOutput := getOutputFunction(tp)
+	constructor := getInputConstructor(tp.In, tp.NumIn())
 	return func(c *gin.Context) {
 		useOutput(
-			val.Call(constructInput(c, tp.In, tp.NumIn())),
+			val.Call(constructor(c)),
 			c,
 		)
 	}

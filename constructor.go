@@ -43,7 +43,9 @@ func getInputConstructor(get func(int) reflect.Type, length int) func(*gin.Conte
 		res := make([]reflect.Value, length)
 		for i := 0; i < length; i++ {
 			res[i] = reflect.New(get(i)).Elem()
-			decoder.Decode(res[i].Interface())
+			if err := decoder.Decode(res[i].Addr().Interface()); err != nil {
+				panic(err)
+			}
 		}
 		for _, v := range c.Params {
 			for _, sf := range paramSetters[v.Key] {

@@ -25,13 +25,13 @@ func validateInput(val reflect.Type) bool {
 
 func validateOutput(val reflect.Type) bool {
 	validOut := func(x reflect.Type) bool {
-		return x.Kind() == reflect.Int || x.Kind() == reflect.Struct
+		return x.Elem().Kind() == reflect.Struct || x.Kind() == reflect.Struct
 	}
 	switch val.NumOut() {
 	case 1:
-		return validOut(val.Out(0))
+		return val.Out(0).Kind() == reflect.Int || validOut(val.Out(0))
 	case 2:
-		return val.Out(0).Kind() != val.Out(1).Kind() && validOut(val.Out(0)) && validOut(val.Out(1))
+		return val.Out(0).Kind() == reflect.Int && validOut(val.Out(1))
 	default:
 		return false
 	}
@@ -53,14 +53,8 @@ func getOutputFunction(val reflect.Type) func([]reflect.Value, *gin.Context) {
 			}
 		}
 	case 2:
-		if val.Out(0).Kind() == reflect.Int {
-			return func(out []reflect.Value, cnt *gin.Context) {
-				cnt.JSON(int(out[0].Int()), out[1].Interface())
-			}
-		} else {
-			return func(out []reflect.Value, cnt *gin.Context) {
-				cnt.JSON(int(out[1].Int()), out[0].Interface())
-			}
+		return func(out []reflect.Value, cnt *gin.Context) {
+			cnt.JSON(int(out[0].Int()), out[1].Interface())
 		}
 	default:
 		return nil
@@ -70,10 +64,10 @@ func getOutputFunction(val reflect.Type) func([]reflect.Value, *gin.Context) {
 func injectFunction(val reflect.Value) gin.HandlerFunc {
 	tp := val.Type()
 	if !validateInput(tp) {
-		panic("Invalid input from endpoint handler")
+		panic("Invalid input from endpoint handler:\n\tValid inputs are: (..objn struct)")
 	}
 	if !validateOutput(tp) {
-		panic("Invalid output from endpoint handler")
+		panic("Invalid output from endpoint handler:\n\tValid outputs are: (status int), (response struct), (status int, response struct)")
 	}
 	useOutput := getOutputFunction(tp)
 	constructor := getInputConstructor(tp.In, tp.NumIn())

@@ -6,7 +6,7 @@ import (
 )
 
 type Item struct {
-	Name string `json:"name"`
+	Name string `json:"name" param:"name"`
 	Done bool   `json:"done"`
 }
 
@@ -24,10 +24,15 @@ func main() {
 	}).Post(func(item Item) int {
 		if _, e := items[item.Name]; e {
 			return 400
-		} else {
-			items[item.Name] = item
-			return 200
 		}
+		items[item.Name] = item
+		return 200
+	})
+	api.Route("items/:name").Get(func(ref Item) (int, *Item) {
+		if item, e := items[ref.Name]; e {
+			return 200, &item
+		}
+		return 404, nil
 	})
 	router.Run()
 }

@@ -72,10 +72,17 @@ func injectFunction(val reflect.Value) gin.HandlerFunc {
 	useOutput := getOutputFunction(tp)
 	constructor := getInputConstructor(tp.In, tp.NumIn())
 	return func(c *gin.Context) {
-		useOutput(
-			val.Call(constructor(c)),
-			c,
-		)
+		inputs, err := constructor(c)
+		if err != nil {
+			c.JSON(400, struct {
+				ErrorMsg string `json:"error"`
+			}{ErrorMsg: err.Error()})
+		} else {
+			useOutput(
+				val.Call(inputs),
+				c,
+			)
+		}
 	}
 }
 
